@@ -1,4 +1,4 @@
-[English](README.md) | **中文**
+[English](README.md) | [한국어](README.ko.md) | **中文**
 
 # fastpaper CLI with Skill
 

@@ -276,12 +276,11 @@ impl Source {
                 | Source::Doaj
                 | Source::Zenodo
                 | Source::Hal
-                | Source::Local
         )
     }
 
     pub fn supports_read(&self) -> bool {
-        self.supports_download()
+        self.supports_download() || matches!(self, Source::Local)
     }
 
     pub fn name(&self) -> &'static str {

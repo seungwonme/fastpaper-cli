@@ -65,6 +65,15 @@ fn download_pubmed_rejects_with_hint() {
 }
 
 #[test]
+fn download_local_is_rejected() {
+    cmd()
+        .args(["download", "local", "tests/fixtures/test.pdf"])
+        .assert()
+        .failure()
+        .stderr(contains("does not support 'download'"));
+}
+
+#[test]
 fn search_pubmed_no_capability_error() {
     // pubmed supports search, so it should NOT fail with "does not support"
     // It will fail with "not yet implemented" but that's fine
@@ -857,7 +866,7 @@ fn semantic_edge_body(paper_key: &str) -> String {
 }
 
 #[test]
-fn citations_returns_citing_papers() {
+fn citations_jsonl_returns_one_paper_per_line() {
     let mut server = mockito::Server::new();
     server
         .mock("GET", mockito::Matcher::Regex("citations".to_string()))
@@ -865,13 +874,15 @@ fn citations_returns_citing_papers() {
         .with_body(semantic_edge_body("citingPaper"))
         .create();
     let output = cmd()
-        .args(["citations", "2301.08745", "--limit", "1", "--format", "json"])
+        .args(["citations", "2301.08745", "--limit", "1", "--format", "jsonl"])
         .env("FASTPAPER_SEMANTIC_URL", server.url())
         .output()
         .unwrap();
     assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
-    let stdout: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(stdout["results"][0]["title"], "A review on the attention mechanism of deep learning");
+    let lines: Vec<&[u8]> = output.stdout.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()).collect();
+    assert_eq!(lines.len(), 1);
+    let paper: serde_json::Value = serde_json::from_slice(lines[0]).unwrap();
+    assert_eq!(paper["title"], "A review on the attention mechanism of deep learning");
 }
 
 #[test]

@@ -1,6 +1,16 @@
 use clap::Parser;
 use fastpaper::{cli, download, identifier, output, read, sources};
 
+fn render_papers(papers: &[sources::Paper], format: &cli::OutputFormat) -> String {
+    match format {
+        cli::OutputFormat::Json => output::to_json(papers),
+        cli::OutputFormat::Jsonl => output::to_jsonl(papers),
+        cli::OutputFormat::Csv => output::to_csv(papers),
+        cli::OutputFormat::Bibtex => output::to_bibtex(papers),
+        cli::OutputFormat::Table => output::to_table(papers),
+    }
+}
+
 fn main() {
     let cli = cli::Cli::parse();
 
@@ -112,13 +122,7 @@ fn main() {
             };
             match result {
                 Ok(papers) => {
-                    let out = match cli.global.format {
-                        cli::OutputFormat::Json => output::to_json(&papers),
-                        cli::OutputFormat::Jsonl => output::to_jsonl(&papers),
-                        cli::OutputFormat::Csv => output::to_csv(&papers),
-                        cli::OutputFormat::Bibtex => output::to_bibtex(&papers),
-                        _ => output::to_table(&papers),
-                    };
+                    let out = render_papers(&papers, &cli.global.format);
                     if let Some(path) = &args.output {
                         std::fs::write(path, &out).unwrap_or_else(|e| {
                             eprintln!("Error writing file: {}", e);
@@ -243,13 +247,7 @@ fn main() {
                             .unwrap_or_else(|_| "https://export.arxiv.org".to_string());
                         match sources::arxiv::get_by_id(&base_url, &args.identifier) {
                             Ok(Some(paper)) => {
-                                let out = match cli.global.format {
-                                    cli::OutputFormat::Json => output::to_json(&[paper]),
-                                    cli::OutputFormat::Jsonl => output::to_jsonl(&[paper]),
-                                    cli::OutputFormat::Csv => output::to_csv(&[paper]),
-                                    cli::OutputFormat::Bibtex => output::to_bibtex(&[paper]),
-                                    _ => output::to_table(&[paper]),
-                                };
+                                let out = render_papers(&[paper], &cli.global.format);
                                 print!("{}", out);
                             }
                             Ok(None) => {
@@ -461,13 +459,7 @@ fn main() {
             };
             match result {
                 Ok(Some(paper)) => {
-                    let out = match cli.global.format {
-                        cli::OutputFormat::Json => output::to_json(&[paper]),
-                        cli::OutputFormat::Jsonl => output::to_jsonl(&[paper]),
-                        cli::OutputFormat::Csv => output::to_csv(&[paper]),
-                        cli::OutputFormat::Bibtex => output::to_bibtex(&[paper]),
-                        _ => output::to_table(&[paper]),
-                    };
+                    let out = render_papers(&[paper], &cli.global.format);
                     print!("{}", out);
                 }
                 Ok(None) => {
@@ -500,12 +492,7 @@ fn main() {
             };
             match result {
                 Ok(papers) => {
-                    let out = match cli.global.format {
-                        cli::OutputFormat::Json => output::to_json(&papers),
-                        cli::OutputFormat::Csv => output::to_csv(&papers),
-                        cli::OutputFormat::Bibtex => output::to_bibtex(&papers),
-                        _ => output::to_table(&papers),
-                    };
+                    let out = render_papers(&papers, &cli.global.format);
                     print!("{}", out);
                 }
                 Err(e) => {
